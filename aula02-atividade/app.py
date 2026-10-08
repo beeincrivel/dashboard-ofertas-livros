@@ -2,8 +2,16 @@
 """
 
 import streamlit as st
-
 import dados
+
+
+def buscar_por_titulo(livros, busca):
+    """Devolve uma lista nova só com livros cujo título contém o texto buscado."""
+    return [
+        livro for livro in livros
+        if busca.lower() in livro.get("titulo", "").lower()
+    ]
+
 
 def montar_tabela(livros):
     """Prepara as linhas que aparecem na tabela, com nomes de coluna amigáveis."""
@@ -13,11 +21,12 @@ def montar_tabela(livros):
             "Título": livro["titulo"],
             "Categoria": livro["categoria"],
             "Nota": livro["nota"] * "⭐",
-            "Preço": f"£ {livro["preco"]:.2f}",
+            "Preço": f"£ {livro['preco']:.2f}",
             "Faixa": classificar_preco(livro["preco"])
         }
         tabela.append(linha)
     return tabela
+
 
 def classificar_preco(preco):
     """Classifica um preço em libras em uma faixa de texto."""
@@ -27,6 +36,7 @@ def classificar_preco(preco):
         return "Médio"
     else:
         return "Caro"
+
 
 def contar_por_faixa(livros):
     """Conta quantos livros existem em cada faixa de preço: {"Caro": 403, ...}"""
@@ -45,9 +55,10 @@ def main():
     st.set_page_config(page_title="Dashboard de Livros", page_icon="📚", layout="wide")
     st.title("📚 Dashboard de Livros")
 
+    
     livros = dados.carregar_livros()
-    tabela = montar_tabela(livros)
 
+    
     col1, col2, col3, col4 = st.columns(4)
     qtd_livros = len(livros)
     col1.metric("Total de Livros", qtd_livros)
@@ -59,10 +70,30 @@ def main():
     col3.metric("Qtd. livros 5 Estrelas", cinco_estrelas)
 
     mais_caro = dados.encontrar_mais_caro(livros)
-    col4.metric("Livro mais caro", f"£{mais_caro["preco"]}")
+    col4.metric("Livro mais caro", f"£{mais_caro['preco']:.2f}")
     col4.caption(mais_caro["titulo"])
 
-    st.dataframe(tabela)
+    st.divider()
+
+   
+    buscar = st.text_input("Buscar pelo título")
+
+    
+    livros_encontrados = buscar_por_titulo(livros, buscar)
+    quantidade = len(livros_encontrados)
+
+    
+    if buscar:
+        st.caption(f"{quantidade} livro(s) encontrado(s)")
+    else:
+        st.caption(f"Exibindo todos os {qtd_livros} livros.")
+
+    
+    if quantidade > 0:
+        tabela = montar_tabela(livros_encontrados)
+        st.dataframe(tabela, use_container_width=True)
+    else:
+        st.warning("Nenhum livro encontrado.")
 
 
 if __name__ == "__main__":
